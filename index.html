@@ -170,7 +170,7 @@
         <button onclick="runJob()">Run Job</button>
         <button class="reset" onclick="resetInventory()">Reset Demo</button>
       </div>
-      
+      <p id="jobStatus" class="status"></p>
     </div>
 
     <div class="panel">
@@ -180,7 +180,7 @@
         <input id="addQuantity" type="number" min="1" placeholder="Quantity to add" />
         <button onclick="addInventory()">Add Inventory</button>
       </div>
-      <p id="status" class="status"></p>
+      <p id="inventoryStatus" class="status"></p>
       <p class="hint">Example: choose Tool 2, enter 3, then click Add Inventory.</p>
     </div>
 
@@ -246,6 +246,18 @@
       localStorage.setItem("toolInventoryDemo", JSON.stringify(inventory));
     }
 
+    function setJobStatus(message, type = "") {
+      const status = document.getElementById("jobStatus");
+      status.className = type ? `status ${type}` : "status";
+      status.textContent = message;
+    }
+
+    function setInventoryStatus(message, type = "") {
+      const status = document.getElementById("inventoryStatus");
+      status.className = type ? `status ${type}` : "status";
+      status.textContent = message;
+    }
+
     function renderJobDropdown() {
       const jobSelect = document.getElementById("jobSelect");
       jobSelect.innerHTML = `<option value="">Select a job</option>`;
@@ -257,11 +269,14 @@
 
     function renderToolDropdown() {
       const toolSelect = document.getElementById("toolSelect");
+      const selectedTool = toolSelect.value;
       toolSelect.innerHTML = `<option value="">Select a tool</option>`;
 
       Object.keys(inventory).forEach(tool => {
         toolSelect.innerHTML += `<option value="${tool}">${tool}</option>`;
       });
+
+      toolSelect.value = selectedTool;
     }
 
     function renderInventory() {
@@ -305,11 +320,9 @@
 
     function runJob() {
       const selectedJob = document.getElementById("jobSelect").value;
-      const status = document.getElementById("status");
 
       if (!selectedJob) {
-        status.className = "status error";
-        status.textContent = "Please select a job first.";
+        setJobStatus("Please select a job first.", "error");
         return;
       }
 
@@ -325,8 +338,7 @@
       });
 
       if (missingTools.length > 0) {
-        status.className = "status error";
-        status.textContent = `${job.displayName} cannot be completed. Missing: ${missingTools.join("; ")}.`;
+        setJobStatus(`${job.displayName} cannot be completed. Missing: ${missingTools.join("; ")}.`, "error");
         return;
       }
 
@@ -337,25 +349,21 @@
       saveInventory();
       renderInventory();
 
-      status.className = "status success";
-      status.textContent = `${job.displayName} completed. Tools were removed from inventory.`;
+      setJobStatus(`${job.displayName} completed. Tools were removed from inventory.`, "success");
       document.getElementById("jobSelect").value = "";
     }
 
     function addInventory() {
       const tool = document.getElementById("toolSelect").value;
       const quantity = Number(document.getElementById("addQuantity").value);
-      const status = document.getElementById("status");
 
       if (!tool) {
-        status.className = "status error";
-        status.textContent = "Please select a tool to add inventory.";
+        setInventoryStatus("Please select a tool to add inventory.", "error");
         return;
       }
 
       if (!quantity || quantity < 1) {
-        status.className = "status error";
-        status.textContent = "Please enter a valid quantity.";
+        setInventoryStatus("Please enter a valid quantity.", "error");
         return;
       }
 
@@ -366,8 +374,7 @@
       document.getElementById("toolSelect").value = "";
       document.getElementById("addQuantity").value = "";
 
-      status.className = "status success";
-      status.textContent = `Added ${quantity} to ${tool}.`;
+      setInventoryStatus(`Added ${quantity} to ${tool}.`, "success");
     }
 
     function resetInventory() {
@@ -375,9 +382,12 @@
       saveInventory();
       renderInventory();
 
-      const status = document.getElementById("status");
-      status.className = "status";
-      status.textContent = "Inventory reset.";
+      document.getElementById("jobSelect").value = "";
+      document.getElementById("toolSelect").value = "";
+      document.getElementById("addQuantity").value = "";
+
+      setJobStatus("Inventory reset.");
+      setInventoryStatus("");
     }
 
     renderJobDropdown();
