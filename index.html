@@ -6,9 +6,7 @@
   <title>Tool Inventory Job Demo</title>
 
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -18,15 +16,9 @@
       padding: 40px 20px;
     }
 
-    .app {
-      max-width: 1100px;
-      margin: auto;
-    }
+    .app { max-width: 1100px; margin: auto; }
 
-    .hero {
-      text-align: center;
-      margin-bottom: 32px;
-    }
+    .hero { text-align: center; margin-bottom: 32px; }
 
     h1 {
       margin: 0;
@@ -48,7 +40,7 @@
       margin-bottom: 24px;
     }
 
-    .job-box {
+    .job-box, .add-box {
       display: flex;
       gap: 12px;
       flex-wrap: wrap;
@@ -56,17 +48,18 @@
       align-items: center;
     }
 
-    input {
-      width: 280px;
+    input, select {
+      width: 230px;
       height: 52px;
       padding: 0 16px;
       border: 1px solid #d1d5db;
       border-radius: 14px;
-      font-size: 17px;
+      font-size: 16px;
       outline: none;
+      background: white;
     }
 
-    input:focus {
+    input:focus, select:focus {
       border-color: #2563eb;
       box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
     }
@@ -93,9 +86,7 @@
       color: #111827;
     }
 
-    .reset:hover {
-      background: #d1d5db;
-    }
+    .reset:hover { background: #d1d5db; }
 
     .grid {
       display: grid;
@@ -103,10 +94,7 @@
       gap: 24px;
     }
 
-    h2 {
-      margin-top: 0;
-      font-size: 24px;
-    }
+    h2 { margin-top: 0; font-size: 24px; }
 
     .tool-card, .job-card {
       border: 1px solid #e5e7eb;
@@ -147,15 +135,11 @@
       font-weight: 800;
       font-size: 18px;
       min-height: 30px;
+      margin-top: 16px;
     }
 
-    .success {
-      color: #15803d;
-    }
-
-    .error {
-      color: #b91c1c;
-    }
+    .success { color: #15803d; }
+    .error { color: #b91c1c; }
 
     .hint {
       text-align: center;
@@ -165,17 +149,9 @@
     }
 
     @media (max-width: 800px) {
-      .grid {
-        grid-template-columns: 1fr;
-      }
-
-      h1 {
-        font-size: 34px;
-      }
-
-      input, button {
-        width: 100%;
-      }
+      .grid { grid-template-columns: 1fr; }
+      h1 { font-size: 34px; }
+      input, select, button { width: 100%; }
     }
   </style>
 </head>
@@ -184,17 +160,27 @@
   <div class="app">
     <div class="hero">
       <h1>Tool Inventory Job Demo</h1>
-      <p class="subtitle">Type a job name. If the required tools are available, they are removed from inventory.</p>
+      <p class="subtitle">Select a job. If the required tools are available, they are removed from inventory.</p>
     </div>
 
     <div class="panel">
+      <h2>Run a Job</h2>
       <div class="job-box">
-        <input id="jobInput" placeholder="Try: Job A, Job B, Job C" />
+        <select id="jobSelect"></select>
         <button onclick="runJob()">Run Job</button>
         <button class="reset" onclick="resetInventory()">Reset Demo</button>
       </div>
       <p id="status" class="status"></p>
-      <p class="hint">Demo jobs: Job A, Job B, Job C, Job D</p>
+    </div>
+
+    <div class="panel">
+      <h2>Add Inventory</h2>
+      <div class="add-box">
+        <select id="toolSelect"></select>
+        <input id="addQuantity" type="number" min="1" placeholder="Quantity to add" />
+        <button onclick="addInventory()">Add Inventory</button>
+      </div>
+      <p class="hint">Example: choose Tool 2, enter 3, then click Add Inventory.</p>
     </div>
 
     <div class="grid">
@@ -259,6 +245,24 @@
       localStorage.setItem("toolInventoryDemo", JSON.stringify(inventory));
     }
 
+    function renderJobDropdown() {
+      const jobSelect = document.getElementById("jobSelect");
+      jobSelect.innerHTML = `<option value="">Select a job</option>`;
+
+      Object.entries(jobs).forEach(([jobKey, job]) => {
+        jobSelect.innerHTML += `<option value="${jobKey}">${job.displayName}</option>`;
+      });
+    }
+
+    function renderToolDropdown() {
+      const toolSelect = document.getElementById("toolSelect");
+      toolSelect.innerHTML = `<option value="">Select a tool</option>`;
+
+      Object.keys(inventory).forEach(tool => {
+        toolSelect.innerHTML += `<option value="${tool}">${tool}</option>`;
+      });
+    }
+
     function renderInventory() {
       const inventoryList = document.getElementById("inventoryList");
       inventoryList.innerHTML = "";
@@ -274,6 +278,8 @@
           </div>
         `;
       });
+
+      renderToolDropdown();
     }
 
     function renderJobs() {
@@ -297,16 +303,16 @@
     }
 
     function runJob() {
-      const input = document.getElementById("jobInput").value.trim().toLowerCase();
+      const selectedJob = document.getElementById("jobSelect").value;
       const status = document.getElementById("status");
 
-      if (!jobs[input]) {
+      if (!selectedJob) {
         status.className = "status error";
-        status.textContent = "Job not found. Try Job A, Job B, Job C, or Job D.";
+        status.textContent = "Please select a job first.";
         return;
       }
 
-      const job = jobs[input];
+      const job = jobs[selectedJob];
       const missingTools = [];
 
       Object.entries(job.tools).forEach(([tool, needed]) => {
@@ -332,7 +338,35 @@
 
       status.className = "status success";
       status.textContent = `${job.displayName} completed. Tools were removed from inventory.`;
-      document.getElementById("jobInput").value = "";
+      document.getElementById("jobSelect").value = "";
+    }
+
+    function addInventory() {
+      const tool = document.getElementById("toolSelect").value;
+      const quantity = Number(document.getElementById("addQuantity").value);
+      const status = document.getElementById("status");
+
+      if (!tool) {
+        status.className = "status error";
+        status.textContent = "Please select a tool to add inventory.";
+        return;
+      }
+
+      if (!quantity || quantity < 1) {
+        status.className = "status error";
+        status.textContent = "Please enter a valid quantity.";
+        return;
+      }
+
+      inventory[tool] += quantity;
+      saveInventory();
+      renderInventory();
+
+      document.getElementById("toolSelect").value = "";
+      document.getElementById("addQuantity").value = "";
+
+      status.className = "status success";
+      status.textContent = `Added ${quantity} to ${tool}.`;
     }
 
     function resetInventory() {
@@ -345,6 +379,7 @@
       status.textContent = "Inventory reset.";
     }
 
+    renderJobDropdown();
     renderInventory();
     renderJobs();
   </script>
