@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tool Inventory Job Demo</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, "Segoe UI", Arial, sans-serif;
+      background: linear-gradient(135deg, #f8fafc, #e5e7eb);
+      color: #111827;
+      padding: 40px 20px;
+    }
+
+    .app {
+      max-width: 1100px;
+      margin: auto;
+    }
+
+    .hero {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 44px;
+      letter-spacing: -1px;
+    }
+
+    .subtitle {
+      color: #64748b;
+      font-size: 18px;
+      margin-top: 12px;
+    }
+
+    .panel {
+      background: white;
+      border-radius: 22px;
+      padding: 24px;
+      box-shadow: 0 18px 35px rgba(15, 23, 42, 0.10);
+      margin-bottom: 24px;
+    }
+
+    .job-box {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+    }
+
+    input {
+      width: 280px;
+      height: 52px;
+      padding: 0 16px;
+      border: 1px solid #d1d5db;
+      border-radius: 14px;
+      font-size: 17px;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+    }
+
+    button {
+      height: 52px;
+      border: none;
+      border-radius: 14px;
+      padding: 0 20px;
+      background: #111827;
+      color: white;
+      font-weight: 700;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #020617;
+      transform: translateY(-1px);
+    }
+
+    .reset {
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    .reset:hover {
+      background: #d1d5db;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 24px;
+    }
+
+    h2 {
+      margin-top: 0;
+      font-size: 24px;
+    }
+
+    .tool-card, .job-card {
+      border: 1px solid #e5e7eb;
+      background: #f9fafb;
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .tool-name, .job-name {
+      font-weight: 800;
+      font-size: 18px;
+    }
+
+    .muted {
+      color: #64748b;
+      font-size: 14px;
+      margin-top: 4px;
+    }
+
+    .qty {
+      min-width: 52px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      background: #dbeafe;
+      color: #1e3a8a;
+      font-weight: 800;
+    }
+
+    .status {
+      text-align: center;
+      font-weight: 800;
+      font-size: 18px;
+      min-height: 30px;
+    }
+
+    .success {
+      color: #15803d;
+    }
+
+    .error {
+      color: #b91c1c;
+    }
+
+    .hint {
+      text-align: center;
+      color: #64748b;
+      margin-top: 14px;
+      font-size: 14px;
+    }
+
+    @media (max-width: 800px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        font-size: 34px;
+      }
+
+      input, button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <div class="hero">
+      <h1>Tool Inventory Job Demo</h1>
+      <p class="subtitle">Type a job name. If the required tools are available, they are removed from inventory.</p>
+    </div>
+
+    <div class="panel">
+      <div class="job-box">
+        <input id="jobInput" placeholder="Try: Job A, Job B, Job C" />
+        <button onclick="runJob()">Run Job</button>
+        <button class="reset" onclick="resetInventory()">Reset Demo</button>
+      </div>
+      <p id="status" class="status"></p>
+      <p class="hint">Demo jobs: Job A, Job B, Job C, Job D</p>
+    </div>
+
+    <div class="grid">
+      <div class="panel">
+        <h2>Available Tool Inventory</h2>
+        <div id="inventoryList"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Job Requirements</h2>
+        <div id="jobList"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const startingInventory = {
+      "Tool 1": 4,
+      "Tool 2": 2,
+      "Tool 3": 3,
+      "Tool 4": 1,
+      "Tool 5": 5
+    };
+
+    const jobs = {
+      "job a": {
+        displayName: "Job A",
+        tools: {
+          "Tool 1": 1,
+          "Tool 2": 1
+        }
+      },
+      "job b": {
+        displayName: "Job B",
+        tools: {
+          "Tool 1": 2,
+          "Tool 3": 1,
+          "Tool 5": 2
+        }
+      },
+      "job c": {
+        displayName: "Job C",
+        tools: {
+          "Tool 2": 2,
+          "Tool 4": 1
+        }
+      },
+      "job d": {
+        displayName: "Job D",
+        tools: {
+          "Tool 1": 3,
+          "Tool 3": 3,
+          "Tool 4": 1,
+          "Tool 5": 1
+        }
+      }
+    };
+
+    let inventory = JSON.parse(localStorage.getItem("toolInventoryDemo")) || { ...startingInventory };
+
+    function saveInventory() {
+      localStorage.setItem("toolInventoryDemo", JSON.stringify(inventory));
+    }
+
+    function renderInventory() {
+      const inventoryList = document.getElementById("inventoryList");
+      inventoryList.innerHTML = "";
+
+      Object.entries(inventory).forEach(([tool, quantity]) => {
+        inventoryList.innerHTML += `
+          <div class="tool-card">
+            <div>
+              <div class="tool-name">${tool}</div>
+              <div class="muted">Available quantity</div>
+            </div>
+            <div class="qty">${quantity}</div>
+          </div>
+        `;
+      });
+    }
+
+    function renderJobs() {
+      const jobList = document.getElementById("jobList");
+      jobList.innerHTML = "";
+
+      Object.values(jobs).forEach(job => {
+        const requirements = Object.entries(job.tools)
+          .map(([tool, quantity]) => `${quantity} × ${tool}`)
+          .join(", ");
+
+        jobList.innerHTML += `
+          <div class="job-card">
+            <div>
+              <div class="job-name">${job.displayName}</div>
+              <div class="muted">Requires: ${requirements}</div>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    function runJob() {
+      const input = document.getElementById("jobInput").value.trim().toLowerCase();
+      const status = document.getElementById("status");
+
+      if (!jobs[input]) {
+        status.className = "status error";
+        status.textContent = "Job not found. Try Job A, Job B, Job C, or Job D.";
+        return;
+      }
+
+      const job = jobs[input];
+      const missingTools = [];
+
+      Object.entries(job.tools).forEach(([tool, needed]) => {
+        const available = inventory[tool] || 0;
+
+        if (available < needed) {
+          missingTools.push(`${tool}: need ${needed}, only ${available} available`);
+        }
+      });
+
+      if (missingTools.length > 0) {
+        status.className = "status error";
+        status.textContent = `${job.displayName} cannot be completed. Missing: ${missingTools.join("; ")}.`;
+        return;
+      }
+
+      Object.entries(job.tools).forEach(([tool, needed]) => {
+        inventory[tool] -= needed;
+      });
+
+      saveInventory();
+      renderInventory();
+
+      status.className = "status success";
+      status.textContent = `${job.displayName} completed. Tools were removed from inventory.`;
+      document.getElementById("jobInput").value = "";
+    }
+
+    function resetInventory() {
+      inventory = { ...startingInventory };
+      saveInventory();
+      renderInventory();
+
+      const status = document.getElementById("status");
+      status.className = "status";
+      status.textContent = "Inventory reset.";
+    }
+
+    renderInventory();
+    renderJobs();
+  </script>
+</body>
+</html>
